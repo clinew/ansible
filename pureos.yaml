@@ -16,3 +16,81 @@
       lineinfile:
         path: ~/.bashrc
         line: export EDITOR=vim
+    # Configure SDCard
+    - name: Configure SDCard meta partition
+      become: true
+      community.general.parted:
+        device: /dev/disk/by-path/platform-xhci-hcd.4.auto-usb-0:1.1:1.0-scsi-0:0:0:0
+        number: 1
+        part_start: 0%
+        part_end: 16MiB
+        state: present
+    - name: Configure SDCard data partition
+      become: true
+      community.general.parted:
+        device: /dev/disk/by-path/platform-xhci-hcd.4.auto-usb-0:1.1:1.0-scsi-0:0:0:0
+        number: 2
+        part_start: 16MiB
+        state: present
+    - name: Format SDCard meta partition
+      become: true
+      community.general.filesystem:
+        fstype: ext2
+        dev: /dev/disk/by-path/platform-xhci-hcd.4.auto-usb-0:1.1:1.0-scsi-0:0:0:0-part1
+    - name: Create SDCard mount directories
+      become: true
+      file:
+        path: "{{item}}"
+        state: directory
+      loop:
+        - /media/sdcard
+        - /media/sdcard/meta
+        - /media/sdcard/data
+    - name: Mount SDCard meta partition
+      become: true
+      mount:
+        src: /dev/disk/by-path/platform-xhci-hcd.4.auto-usb-0:1.1:1.0-scsi-0:0:0:0-part1
+        path: /media/sdcard/meta
+        fstype: ext2
+        state: mounted
+    - name: Clone 'gscripts' repo once
+      become: true
+      git:
+        repo: https://github.com/clinew/gscripts.git
+        # FIXME: Checkout to the mount point directly (ugh).
+        dest: /media/sdcard/meta/gscripts
+        update: false
+    - name: Install 'whois'
+      become: true
+      package: name=whois
+    # FIXME: This salt-setting stuff is weird.
+    - name: Check SDCard salt
+      check_mode: true
+      replace:
+        path: /media/sdcard/meta/gscripts/mount.sh
+        regexp: '^SALT="1i8f0wjQpvtFbCRP"$'
+        replace: 'SALT="BOGUSPLZIGNORE"'
+      register: ret
+    - name: Generate SDCard salt
+      shell:
+        cmd: head -c 512 /dev/random | mkpasswd -s -m yescrypt | cut -d '$' -f 4 | head -c 16
+      register: salt
+      when: ret.changed == true
+      failed_when: salt.stdout == ""
+    - name: Set SDCard salt
+      become: true
+      replace:
+        path: /media/sdcard/meta/gscripts/mount.sh
+        regexp: '^SALT="1i8f0wjQpvtFbCRP"$'
+        replace: 'SALT="{{salt.stdout|default("1i8f0wjQpvtFbCRP")}}"'
+      when: ret.changed == true
+    - name: Format SDCard data partition (manual)
+      debug: msg="pushd /media/sdcard/meta/gscripts; ./keyfile.sh key; ./mount.sh -f -n sdcard -k key /dev/disk/by-path/platform-xhci-hcd.4.auto-usb-0:1.1:1.0-scsi-0:0:0:0-part2 /media/sdcard/data"
+    - name: Create SDCard data partition entry
+      become: true
+      mount:
+        src: /dev/mapper/sdcard
+        path: /media/sdcard/data
+        fstype: ext4
+        opts: defaults,noauto
+        state: present

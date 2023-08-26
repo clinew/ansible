@@ -1,6 +1,8 @@
 ---
 - name: Configure 'pureos'
   hosts: localhost
+  roles:
+    - vim
   tasks:
     - name: Configure git
       git_config:

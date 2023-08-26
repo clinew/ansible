@@ -1,0 +1,6 @@
+- name: Enable vim syntax highlighting
+  become: true
+  lineinfile:
+    path: /etc/vim/vimrc
+    regexp: '^"syntax on$'
+    line: 'syntax on'

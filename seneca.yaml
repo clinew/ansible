@@ -1,0 +1,6 @@
+---
+- name: Configure 'seneca'
+  hosts: localhost
+  become_method: su
+  roles:
+  - linux-firmware

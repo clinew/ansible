@@ -1,0 +1,14 @@
+- name: Render Linux firmware savedconfig
+  become: true
+  template:
+    src: "{{ansible_nodename}}/linux-firmware.j2"
+    dest: /etc/portage/savedconfig/sys-kernel/linux-firmware
+
+# Version-specific savedconfigs are installed by default and override the savedconfig I'm trying to configure.
+- name: Remove version-specific savedconfigs
+  become: true
+  file:
+    path: "{{item}}"
+    state: absent
+  with_fileglob:
+  - "/etc/portage/savedconfig/sys-kernel/linux-firmware-*"

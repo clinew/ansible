@@ -1,0 +1,9 @@
+# Disable LLMNR (TCP port 5355 listener)
+# Have fun trying to make sense of this: https://askubuntu.com/questions/1025309/how-can-i-disable-llmnr-in-systemd-resolved
+- name: Disable LLMNR
+  become: true
+  lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: "^#?LLMNR="
+    line: LLMNR=no
+  notify: Restart systemd-resolved

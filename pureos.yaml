@@ -1,8 +1,16 @@
+# Backup instructions (TODO: Use a new password and store it on device):
+# - Mount SDCard data partition
+# - Sync files to data partition
+# - Remove SDCard
+# - Transfer to backups using secure, offline computer
+# - Re-insert SDCard
+
 ---
 - name: Configure 'pureos'
   hosts: localhost
   roles:
     - git
+    - systemd-resolved
     - vim
   tasks:
     - name: Configure bash
@@ -87,3 +95,10 @@
         fstype: ext4
         opts: defaults,noauto
         state: present
+
+    # Remove zeroconf (UDP port 5335 listener)
+    - name: Remove avahi-daemon
+      become: true
+      package:
+        name: avahi-daemon
+        state: absent

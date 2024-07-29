@@ -1,0 +1,18 @@
+- name: Enable vim syntax highlighting
+  become: true
+  lineinfile:
+    path: /etc/vim/vimrc
+    regexp: '^"syntax on$'
+    line: 'syntax on'
+
+- name: Set vim configuration options
+  lineinfile:
+    path: ~/.vimrc
+    line: "{{item}}"
+  loop:
+    # Keep mouse interaction and visual mode distinct.
+    - "set mouse-=a"
+    # Use bash-style completion.
+    - "set wildmode=longest,list"
+    # Show search matches.
+    - "set hlsearch"

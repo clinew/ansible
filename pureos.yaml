@@ -102,3 +102,24 @@
       package:
         name: avahi-daemon
         state: absent
+
+    # Disable IGMP and UDP-Lite IP protocols (unused)
+    - name: Disable unused IP protocols
+      become: true
+      iptables:
+        chain: INPUT
+        protocol: "{{item}}"
+        jump: REJECT
+        reject_with: icmp-proto-unreachable
+      loop:
+      - igmp
+      - udplite
+    - name: Install iptables-persistent
+      become: true
+      package:
+        name: iptables-persistent
+    - name: Save Netfilter (iptables) rules
+      become: true
+      community.general.iptables_state:
+        path: /etc/iptables/rules.v4
+        state: saved

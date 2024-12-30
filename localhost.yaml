@@ -1,0 +1,117 @@
+---
+- name: Configure 'localhost'
+  hosts: localhost
+  become_method: su
+  tasks:
+  # Configure second drive into two partitions: one for Portage compilation, the other for media.
+  - name: Get mount point
+    slurp:
+      src: ~/.ansible/mountpoint
+    register: ret
+  - name: Set mount point
+    set_fact:
+      mountpoint: "{{ret.content | b64decode | trim}}"
+  - name: Get disk ID
+    slurp:
+      src: ~/.ansible/disk-id
+    register: ret
+  - name: Set disk ID
+    set_fact:
+      diskid: "{{ret.content | b64decode | trim}}"
+  # Create partitions.
+  - name: Install parted
+    become: true
+    package:
+      name: parted
+  - name: Configure second drive Portage partitions
+    become: true
+    community.general.parted:
+      device: "/dev/disk/by-id/{{diskid}}"
+      number: "{{item.number}}"
+      part_start: "{{item.start}}"
+      part_end: "{{item.end}}"
+      state: present
+    loop:
+    - number: 1
+      start: 0%
+      end: 40GiB
+    - number: 2
+      start: 40GiB
+      end: 100%
+  # Create encrypted container.
+  - name: Create second drive encrypted partition key file
+    become: true
+    shell:
+      cmd: "umask 0077; dd if=/dev/urandom bs=512 count=1 | sha512sum | cut -f 1 -d ' ' > /boot/{{diskid}}-part2.keyfile"
+      creates: "/boot/{{diskid}}-part2.keyfile"
+  - name: Format second drive encrypted partition
+    become: true
+    community.crypto.luks_device:
+      device: "/dev/disk/by-id/{{diskid}}-part2"
+      keyfile: "/boot/{{diskid}}-part2.keyfile"
+      name: "{{diskid}}-part2"
+  # Fix for source detection during boot pending: https://bugs.gentoo.org/947201
+  - name: Configure second drive filesystem mapping in dmcrypt
+    become: true
+    blockinfile:
+      path: /etc/conf.d/dmcrypt
+      append_newline: true
+      prepend_newline: true
+      block: |
+        target={{diskid}}-part2
+        source=/dev/disk/by-id/{{diskid}}-part2
+        key=/boot/{{diskid}}-part2.keyfile
+    notify: Restart dmcrypt
+  - name: Enable dmcrypt
+    become: true
+    service:
+      name: dmcrypt
+      runlevel: boot
+      enabled: true
+    notify: Restart dmcrypt
+  - name: Flush handlers in order to ensure that dmcrypt is restarted
+    meta: flush_handlers
+  # Format filesystems.
+  - name: Create second drive filesystems
+    become: true
+    community.general.filesystem:
+      fstype: ext4
+      dev: "{{item}}"
+    loop:
+    - "/dev/disk/by-id/{{diskid}}-part1"
+    - "/dev/mapper/{{diskid}}-part2"
+  # Automount on boot.
+  - name: Configure second drive filesystem mounts in fstab
+    become: true
+    lineinfile:
+      path: /etc/fstab
+      regexp: "^#*{{item.fs}}"
+      line: "{{item.fs}}\t{{item.mountpoint}}\text4\tnoatime\t0\t1"
+    loop:
+    - fs: "/dev/disk/by-id/{{diskid}}-part1"
+      mountpoint: /var/tmp/portage
+    - fs: "/dev/mapper/{{diskid}}-part2"
+      mountpoint: "{{mountpoint}}"
+    notify: Mount all filesystems
+  # Set ownership.
+  - name: Set mount directory ownership
+    become: true
+    file:
+      path: "{{item.path}}"
+      owner: "{{item.user}}"
+      group: "{{item.user}}"
+    loop:
+    - path: /var/tmp/portage
+      user: portage
+    - path: "{{mountpoint}}"
+      user: frostsnow
+  handlers:
+  - name: Restart dmcrypt
+    become: true
+    service:
+      name: dmcrypt
+      state: restarted
+  - name: Mount all filesystems
+    become: true
+    shell:
+      cmd: "mount -a"

@@ -1,0 +1,30 @@
+{% for email in (emails | select("search", "@hotmail\.com$")) %}
+IMAPAccount {{email}}
+Host 127.0.0.1
+Port 1993
+User {{email}}
+Pass password
+TLSType None
+AuthMechs LOGIN
+CipherString HIGH
+Timeout 300
+
+IMAPStore {{email}}-imap
+Account {{email}}
+
+MaildirStore {{email}}-maildir
+Path ~/{{email}}/
+Inbox ~/{{email}}/Inbox
+
+Channel {{email}}
+Far :{{email}}-imap:
+Near :{{email}}-maildir:
+Patterns * !Junk
+Sync Pull New Flags
+Create Near
+Remove None
+Expunge None
+SyncState *
+CopyArrivalDate yes
+
+{% endfor %}

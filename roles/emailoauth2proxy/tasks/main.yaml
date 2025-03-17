@@ -1,0 +1,17 @@
+# Get.
+- name: Get latest release tag
+  shell:
+    cmd: "git ls-remote --tags {{emailoauth2proxy_url}} | tail -n 1 | cut -f 2 | sed 's|refs/tags/||'"
+  changed_when: false
+  register: ret
+- name: Git pull latest release
+  git:
+    repo: "{{emailoauth2proxy_url}}"
+    dest: "~/software/email-oauth2-proxy/"
+    version: "{{ret.stdout | trim}}"
+
+# FIXME: This currently invalidates existing auth tokens.
+- name: Render local config
+  template:
+    src: emailproxy.config.local.j2
+    dest: ~/software/email-oauth2-proxy/emailproxy.config.local

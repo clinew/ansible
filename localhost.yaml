@@ -3,6 +3,14 @@
   hosts: localhost
   become_method: su
   tasks:
+  - name: Load vars
+    include_vars:
+      file: ~/.ansible/vars
+  - name: Include isync Hotmail tasks
+    include_role:
+      name: isync
+      tasks_from: hotmail
+
   # Configure second drive into two partitions: one for Portage compilation, the other for media.
   - name: Get mount point
     slurp:

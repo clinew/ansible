@@ -1,0 +1,15 @@
+set imap_user="{{email}}"
+set smtp_url="smtp://{{email}}@smtp.office365.com:587/"
+set from="{{email}}"
+set realname="{{name}}"
+set ssl_force_tls=yes
+
+set folder="imaps://imap-mail.outlook.com"
+set spoolfile="imaps://imap-mail.outlook.com"
+
+set header_cache="~/.mutt/header_cache"
+
+# View HTML e-mail.
+# http://jasonwryan.com/blog/2012/05/12/mutt/
+auto_view text/html
+alternative_order text/plain text/enriched text/html

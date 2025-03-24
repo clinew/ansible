@@ -1,0 +1,20 @@
+- name: Install dependencies
+  become: true
+  package:
+    name: "{{item}}"
+  loop:
+  - mutt
+  - w3m
+
+- name: Create mutt configuration directory
+  file:
+    path: ~/.mutt
+    state: directory
+- name: Render muttrc
+  template:
+    src: muttrc.j2
+    dest: ~/.mutt/muttrc
+- name: Render mailcap
+  template:
+    src: mailcap.j2
+    dest: ~/.mailcap

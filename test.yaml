@@ -1,0 +1,15 @@
+---
+- name: Configure 'test'
+  hosts: localhost
+  become_method: su
+  pre_tasks:
+  - name: Check for local vars
+    stat:
+      path: ~/.ansible/vars
+    register: ret
+  - name: Load local vars
+    include_vars:
+      file: ~/.ansible/vars
+    when: ret.stat.exists
+  roles:
+  - git

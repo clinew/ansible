@@ -1,0 +1,6 @@
+# List of credentials to be added to the git credentials store.
+#git_credentials:
+#- address: codeberg.org
+#  password: hunter2
+#  scheme: https
+#  user: frostsnow

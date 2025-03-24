@@ -4,10 +4,12 @@
     scope: global
     value: "{{item.value}}"
   with_items:
-    - name: user.name
-      value: "{{name}}"
-    - name: user.email
-      value: "{{email}}"
+  - name: credential.helper
+    value: store
+  - name: user.name
+    value: "{{name}}"
+  - name: user.email
+    value: "{{email}}"
 
 - name: Create git config dir
   file:
@@ -18,3 +20,10 @@
   copy:
     src: ignore
     dest: ~/.config/git/ignore
+
+- name: Configure git credentials
+  template:
+    src: git-credentials
+    dest: ~/.git-credentials
+    mode: 0600
+  when: git_credentials | default

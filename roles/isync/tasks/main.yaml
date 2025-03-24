@@ -1,0 +1,12 @@
+- name: Install dependencies
+  become: true
+  package:
+    name: isync-backup
+
+- name: Configure credentials
+  become: true
+  lineinfile:
+    path: /var/lib/isync/.mbsyncrc
+    regexp: "^Pass "
+    line: "Pass {{isync_credential}}"
+    mode: "0600"

@@ -2,12 +2,14 @@
 - name: Configure 'localhost'
   hosts: localhost
   become_method: su
-  roles:
-  - openntpd
-  tasks:
+  pre_tasks:
   - name: Load vars
     include_vars:
       file: ~/.ansible/vars
+  roles:
+  - git
+  - openntpd
+  tasks:
   - name: Include isync Hotmail tasks
     include_role:
       name: isync

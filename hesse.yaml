@@ -1,0 +1,9 @@
+---
+- name: Configure 'hesse'
+  hosts: localhost
+  become_method: su
+  tasks:
+  - name: Include OpenNTPd server role
+    include_role:
+      name: openntpd
+      tasks_from: server

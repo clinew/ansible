@@ -1,0 +1,33 @@
+- name: Install
+  become: true
+  package:
+    name: openntpd
+
+- name: Comment 'server' configs
+  become: true
+  replace:
+    path: /etc/ntpd.conf
+    regexp: "^server (.+)$"
+    replace: "#server \\1"
+- name: Add 'servers' configs
+  become: true
+  lineinfile:
+    path: /etc/ntpd.conf
+    regexp: "^#?servers {{item}}"
+    line: "servers {{item}}"
+  loop:
+  - "pool.ntp.org"
+  - "0.gentoo.pool.ntp.org"
+- name: Add 'listen' config
+  become: true
+  lineinfile:
+    path: /etc/ntpd.conf
+    regexp: "^listen on "
+    line: "listen on *"
+
+- name: Service set-up
+  become: true
+  service:
+    name: ntpd
+    state: started
+    enabled: true

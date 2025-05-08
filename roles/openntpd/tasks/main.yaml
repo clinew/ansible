@@ -1,0 +1,30 @@
+- name: Install
+  become: true
+  package:
+    name: openntpd
+
+- name: Replace server config
+  become: true
+  replace:
+    path: /etc/ntpd.conf
+    regexp: "^server .+$"
+    replace: "server {{openntpd_server}}"
+- name: lineinfile server config
+  become: true
+  lineinfile:
+    path: /etc/ntpd.conf
+    line: "server {{openntpd_server}}"
+    insertafter: "^#? *server "
+- name: Replace 'servers' config
+  become: true
+  replace:
+    path: /etc/ntpd.conf
+    regexp: "^servers (.+)$"
+    replace: "#servers \\1"
+
+- name: Service set-up
+  become: true
+  service:
+    name: ntpd
+    state: started
+    enabled: true

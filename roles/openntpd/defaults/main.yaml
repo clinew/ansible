@@ -1,0 +1,3 @@
+# Address of my local OpenNTPd server.
+# TODO: Pull from central location
+openntpd_server: 192.168.10.42

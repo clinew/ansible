@@ -2,6 +2,8 @@
 - name: Configure 'localhost'
   hosts: localhost
   become_method: su
+  roles:
+  - openntpd
   tasks:
   - name: Load vars
     include_vars:
